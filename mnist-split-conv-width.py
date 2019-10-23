@@ -39,14 +39,14 @@ X_train /= 255.0
 X_test /= 255.0
 
 
-# In[69]:
+# In[4]:
 
 
 train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
 test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_test))
 
 
-# In[37]:
+# In[5]:
 
 
 class Model:
@@ -101,11 +101,13 @@ class Model:
     
 
 
-# In[71]:
+# In[8]:
 
 
 def build_model(split_convolutions=False):
     l = tf.keras.layers
+    
+    devices = ['/CPU:0', '/CPU:0']
     
     inputs = l.Input(shape=(28, 28, 1))
     weights = {
@@ -120,11 +122,12 @@ def build_model(split_convolutions=False):
     x = inputs
     if split_convolutions:
         x1, x2 = tf.split(x, 2, axis=1)
-        x1 = tf.nn.conv2d(x1, weights['wc1'], strides=[1, 1, 1, 1], padding='SAME')
-        x1 = tf.nn.bias_add(x1, biases['bc1'])
-        x2 = tf.nn.conv2d(x2, weights['wc1'], strides=[1, 1, 1, 1], padding='SAME')
-        x2 = tf.nn.bias_add(x2, biases['bc1'])
+        with tf.device(devices[0]):
+            x1 = tf.nn.conv2d(x1, weights['wc1'], strides=[1, 1, 1, 1], padding='SAME')
+        with tf.device(devices[1]):
+            x2 = tf.nn.conv2d(x2, weights['wc1'], strides=[1, 1, 1, 1], padding='SAME')
         x = tf.concat([x1, x2], axis=1)
+        x = tf.nn.bias_add(x, biases['bc1'])
     else:
         #x = l.Conv2D(32, 5, padding='SAME', activation=tf.nn.relu)(x)
         x = tf.nn.conv2d(x, weights['wc1'], strides=[1, 1, 1, 1], padding='SAME')
